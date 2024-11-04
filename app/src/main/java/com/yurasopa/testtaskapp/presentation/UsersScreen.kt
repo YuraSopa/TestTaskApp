@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -34,38 +35,36 @@ fun UsersScreen(
     navController: NavController,
     viewModel: UsersViewModel = hiltViewModel()
 ) {
-    Scaffold {
-        Column(
-            modifier = modifier
-        ) {
 
-            val users = viewModel.users.collectAsState()
-            Box(
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
+
+        val users = viewModel.users.collectAsState()
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .background(Color.Yellow)
+        ) {
+            Text(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .background(Color.Yellow)
-            ) {
-                Text(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .align(Alignment.Center),
-                    text = "Working with GET request",
-                    style = Typography.heading1
-                )
-            }
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 8.dp)
-                    .background(Color.White)
-            ) {
-                items(users.value) { user ->
-                    UserBoxScreen(user)
-                }
+                    .padding(16.dp)
+                    .align(Alignment.Center),
+                text = "Working with GET request",
+                style = Typography.heading1
+            )
+        }
+        LazyColumn(
+            modifier = Modifier
+                .background(Color.White)
+        ) {
+            items(users.value) { user ->
+                UserBoxScreen(user)
             }
         }
     }
+
 
 }
 

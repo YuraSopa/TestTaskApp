@@ -9,5 +9,6 @@ import kotlinx.coroutines.flow.Flow
 interface Repository {
 
     fun getUsersList(page: Int, count: Int): Flow<Resource<List<User>>>
-    fun addUser(userRequest: UserRequest): Resource<UserResponse>
+    fun addUser(userRequest: UserRequest, token: String): Flow<Resource<UserResponse>>
+    suspend fun getToken(): Resource<String>
 }

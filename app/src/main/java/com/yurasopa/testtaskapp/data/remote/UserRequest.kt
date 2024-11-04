@@ -1,6 +1,7 @@
 package com.yurasopa.testtaskapp.data.remote
 
 import com.google.gson.annotations.SerializedName
+import java.io.File
 
 data class UserRequest(
     val name: String,
@@ -8,5 +9,5 @@ data class UserRequest(
     val phone: String,
     @SerializedName("position_id")
     val positionId: Int,
-    val photo: String
+    val photo: File
 )

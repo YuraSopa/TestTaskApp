@@ -18,7 +18,7 @@ fun NavigationGraph(
             UsersScreen(navController = navController, modifier = modifier)
         }
         composable(route = ScreenRoutes.SignUpScreen.route) {
-            SignUpScreen(navController = navController)
+            SignUpScreen(navController = navController, modifier = modifier)
         }
     }
 }
