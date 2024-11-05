@@ -5,8 +5,10 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,33 +21,38 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.yurasopa.testtaskapp.R
 import com.yurasopa.testtaskapp.utils.Resource
 import com.yurasopa.testtaskapp.utils.Typography
 import com.yurasopa.testtaskapp.utils.toFile
+import kotlinx.coroutines.launch
 import java.io.File
 
 @Composable
@@ -64,7 +71,7 @@ fun SignUpScreen(
     var selectedPosition by remember { mutableIntStateOf(0) }
     var photoFile by remember { mutableStateOf<File?>(null) }
 
-    val chooserDialogState = remember { mutableStateOf(false) }
+    val chooserBottomSheetState = remember { mutableStateOf(false) }
     val cameraImageUri = remember { mutableStateOf<Uri?>(null) }
 
     val isLoading by viewModel.isLoading.collectAsState()
@@ -151,9 +158,11 @@ fun SignUpScreen(
                 Text(
                     text = "Upload",
                     color = Color(0xFF00BDD3),
-                    modifier = Modifier.clickable {
-                        chooserDialogState.value = true
-                    })
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            chooserBottomSheetState.value = true
+                        })
             },
             readOnly = true,
             modifier = Modifier
@@ -163,7 +172,8 @@ fun SignUpScreen(
 
         Button(
             modifier = Modifier
-                .align(Alignment.CenterHorizontally),
+                .align(Alignment.CenterHorizontally)
+                .padding(16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.Yellow,
                 contentColor = Color.Black
@@ -176,7 +186,6 @@ fun SignUpScreen(
                         Toast.LENGTH_SHORT
                     ).show()
                 } else {
-                    // Виклик методу addUser з обов'язковими полями
                     photoFile?.let {
                         viewModel.addUser(name, email, phone, selectedPosition, it)
                     }
@@ -205,23 +214,28 @@ fun SignUpScreen(
             }
         }
 
-        if (chooserDialogState.value) {
-            ContentSelectionDialog(onCameraSelected = {
-                chooserDialogState.value = false
-                if (navController.context.checkSelfPermission(Manifest.permission.CAMERA)
-                    == android.content.pm.PackageManager.PERMISSION_GRANTED
-                ) {
-                    cameraImageLauncher.launch(
-                        viewModel.createImageUri(navController.context, cameraImageUri)
-                    )
-                } else {
-                    //request permission
-                    permissionLauncher.launch(Manifest.permission.CAMERA)
-                }
-            }, onGallerySelected = {
-                chooserDialogState.value = false
-                imageLauncher.launch("image/*")
-            })
+        if (chooserBottomSheetState.value) {
+            ContentSelectionBottomSheet(
+                onCameraSelected = {
+                    chooserBottomSheetState.value = false
+                    if (navController.context.checkSelfPermission(Manifest.permission.CAMERA)
+                        == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    ) {
+                        cameraImageLauncher.launch(
+                            viewModel.createImageUri(navController.context, cameraImageUri)
+                        )
+                    } else {
+                        //request permission
+                        permissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                },
+                onGallerySelected = {
+                    chooserBottomSheetState.value = false
+                    imageLauncher.launch("image/*")
+                },
+                onDismiss = {
+                    chooserBottomSheetState.value = false
+                })
 
         }
     }
@@ -301,22 +315,70 @@ fun PositionSelectionRadioGroup(
     }
 }
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ContentSelectionDialog(
+fun ContentSelectionBottomSheet(
     onCameraSelected: () -> Unit,
-    onGallerySelected: () -> Unit
+    onGallerySelected: () -> Unit,
+    onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        confirmButton = {
-            TextButton(onClick = onCameraSelected) {
-                Text(text = "Camera", color = MaterialTheme.colorScheme.primary)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+
+    ModalBottomSheet(
+        onDismissRequest = { onDismiss() },
+        sheetState = sheetState
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Choose how you want to add a photo",
+                modifier = Modifier.padding(bottom = 16.dp),
+                color = Color.Gray
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .padding(vertical = 16.dp, horizontal = 80.dp)
+                    .fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            scope.launch {
+                                sheetState.hide()
+                            }
+                            onCameraSelected()
+                        }) {
+                    Image(
+                        painter = painterResource(id = R.drawable.camera_icon),
+                        contentDescription = "Camera"
+                    )
+                    Spacer(modifier = Modifier.padding(8.dp))
+                    Text(text = "Camera", color = Color.Black)
+                }
+
+                Column(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable {
+                            scope.launch {
+                                sheetState.hide()
+                            }
+                            onGallerySelected()
+                        }) {
+                    Image(
+                        painter = painterResource(id = R.drawable.gallery_icon),
+                        contentDescription = "Gallery"
+                    )
+                    Spacer(modifier = Modifier.padding(8.dp))
+                    Text(text = "Gallery", color = Color.Black)
+                }
             }
-        },
-        onDismissRequest = { },
-        dismissButton = {
-            TextButton(onClick = onGallerySelected) {
-                Text(text = "Gallery", color = MaterialTheme.colorScheme.primary)
-            }
-        },
-        title = { Text(text = "Choose how you want to add a photo") })
+        }
+    }
 }

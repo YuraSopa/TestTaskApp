@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
@@ -40,10 +41,8 @@ fun BottomBar(
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
 
-    Box(
-        modifier = modifier
-            .height(56.dp)
-            .background(Color(0xFFF8F8F8))
+    BottomAppBar(
+        modifier = modifier.height(80.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -87,43 +86,3 @@ fun BottomBar(
         }
     }
 }
-
-
-    @Composable
-    fun CustomNavigationBarItem(
-        icon: Painter,
-        label: String,
-        selected: Boolean,
-        onClick: () -> Unit
-    ) {
-        // Background color changes based on selection state
-        val backgroundColor =
-            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent
-        val contentColor =
-            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-
-        Surface(
-            color = backgroundColor,
-            shape = MaterialTheme.shapes.small,
-            modifier = Modifier
-                .padding(horizontal = 8.dp, vertical = 4.dp)
-                .clickable(onClick = onClick)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-            ) {
-                Icon(
-                    painter = icon,
-                    contentDescription = null, // Icon is decorative
-                    tint = contentColor
-                )
-                Text(
-                    text = label,
-                    color = contentColor,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        }
-    }
