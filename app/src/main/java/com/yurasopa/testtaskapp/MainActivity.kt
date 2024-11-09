@@ -6,13 +6,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.yurasopa.testtaskapp.navigation.NavigationGraph
 import com.yurasopa.testtaskapp.presentation.BottomBar
+import com.yurasopa.testtaskapp.presentation.CustomTopBar
 import com.yurasopa.testtaskapp.ui.theme.TestTaskAppTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -25,27 +25,16 @@ class MainActivity : ComponentActivity() {
             TestTaskAppTheme {
                 val navController = rememberNavController()
                 Scaffold(
+                    topBar = {
+                        val navBackStackEntry by navController.currentBackStackEntryAsState()
+                        val currentRoute = navBackStackEntry?.destination?.route
+                        CustomTopBar(currentRoute = currentRoute)
+                    },
                     bottomBar = { BottomBar(navController = navController) }) { innerPadding ->
                     NavigationGraph(modifier = Modifier.padding(innerPadding), navController)
 
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TestTaskAppTheme {
-        Greeting("Android")
     }
 }

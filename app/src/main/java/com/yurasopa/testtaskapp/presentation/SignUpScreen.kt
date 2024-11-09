@@ -6,16 +6,12 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -106,136 +102,125 @@ fun SignUpScreen(
         }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-    ) {
-
-
-        Box(
-            modifier = Modifier
+        Column(
+            modifier = modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .background(Color.Yellow)
+                .verticalScroll(scrollState)
         ) {
-            Text(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .align(Alignment.Center),
-                text = "Working with POST request",
-                style = Typography.heading1
+
+            CustomTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text(text = "Your name") })
+            CustomTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text(text = "Email") })
+            CustomTextField(
+                value = phone,
+                onValueChange = { phone = it },
+                label = { Text(text = "Phone") },
+                supportingText = {
+                    Text(
+                        text = "+38 (XXX) XXX - XX - XX",
+                        style = Typography.body3
+                    )
+                }
             )
-        }
 
-        CustomTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text(text = "Your name") })
-        CustomTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text(text = "Email") })
-        CustomTextField(
-            value = phone,
-            onValueChange = { phone = it },
-            label = { Text(text = "Phone") },
-            supportingText = { Text(text = "+38 (XXX) XXX - XX - XX", style = Typography.body3) }
-        )
+            PositionSelectionRadioGroup(
+                selectedPosition = selectedPosition,
+                onPositionSelected = { idRole ->
+                    selectedPosition = idRole
+                }
+            )
 
-        PositionSelectionRadioGroup(
-            selectedPosition = selectedPosition,
-            onPositionSelected = { idRole ->
-                selectedPosition = idRole
+            OutlinedTextField(
+                value = photoFile?.name ?: "",
+                onValueChange = {},
+                placeholder = { Text("Upload your photo") },
+                suffix = {
+                    Text(
+                        text = "Upload",
+                        color = Color(0xFF00BDD3),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                chooserBottomSheetState.value = true
+                            })
+                },
+                readOnly = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            )
+
+            Button(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Yellow,
+                    contentColor = Color.Black
+                ),
+                onClick = {
+                    if (name.isBlank() || email.isBlank() || phone.isBlank() || photoFile == null) {
+                        Toast.makeText(
+                            navController.context,
+                            "Please fill in all fields and select a photo.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        photoFile?.let {
+                            viewModel.addUser(name, email, phone, selectedPosition, it)
+                        }
+                    }
+                }) {
+                Text(text = "Sign up", style = Typography.body2, modifier = Modifier.padding(8.dp))
             }
-        )
 
-        OutlinedTextField(
-            value = photoFile?.name ?: "",
-            onValueChange = {},
-            placeholder = { Text("Upload your photo") },
-            suffix = {
-                Text(
-                    text = "Upload",
-                    color = Color(0xFF00BDD3),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable {
-                            chooserBottomSheetState.value = true
-                        })
-            },
-            readOnly = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        )
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
 
-        Button(
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Yellow,
-                contentColor = Color.Black
-            ),
-            onClick = {
-                if (name.isBlank() || email.isBlank() || phone.isBlank() || photoFile == null) {
+            errorMessage?.let {
+                Toast.makeText(navController.context, it, Toast.LENGTH_SHORT).show()
+            }
+
+            registrationResult?.let {
+                if (it is Resource.Success) {
                     Toast.makeText(
                         navController.context,
-                        "Please fill in all fields and select a photo.",
+                        "Registration successful!",
                         Toast.LENGTH_SHORT
                     ).show()
-                } else {
-                    photoFile?.let {
-                        viewModel.addUser(name, email, phone, selectedPosition, it)
-                    }
+
+                    viewModel.clearRegistrationResult()
                 }
-            }) {
-            Text(text = "Sign up", style = Typography.body2, modifier = Modifier.padding(8.dp))
-        }
-
-        if (isLoading) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-        }
-
-        errorMessage?.let {
-            Toast.makeText(navController.context, it, Toast.LENGTH_SHORT).show()
-        }
-
-        registrationResult?.let {
-            if (it is Resource.Success) {
-                Toast.makeText(
-                    navController.context,
-                    "Registration successful!",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                viewModel.clearRegistrationResult()
             }
-        }
 
-        if (chooserBottomSheetState.value) {
-            ContentSelectionBottomSheet(
-                onCameraSelected = {
-                    chooserBottomSheetState.value = false
-                    if (navController.context.checkSelfPermission(Manifest.permission.CAMERA)
-                        == android.content.pm.PackageManager.PERMISSION_GRANTED
-                    ) {
-                        cameraImageLauncher.launch(
-                            viewModel.createImageUri(navController.context, cameraImageUri)
-                        )
-                    } else {
-                        //request permission
-                        permissionLauncher.launch(Manifest.permission.CAMERA)
-                    }
-                },
-                onGallerySelected = {
-                    chooserBottomSheetState.value = false
-                    imageLauncher.launch("image/*")
-                },
-                onDismiss = {
-                    chooserBottomSheetState.value = false
-                })
+            if (chooserBottomSheetState.value) {
+                ContentSelectionBottomSheet(
+                    onCameraSelected = {
+                        chooserBottomSheetState.value = false
+                        if (navController.context.checkSelfPermission(Manifest.permission.CAMERA)
+                            == android.content.pm.PackageManager.PERMISSION_GRANTED
+                        ) {
+                            cameraImageLauncher.launch(
+                                viewModel.createImageUri(navController.context, cameraImageUri)
+                            )
+                        } else {
+                            //request permission
+                            permissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
+                    },
+                    onGallerySelected = {
+                        chooserBottomSheetState.value = false
+                        imageLauncher.launch("image/*")
+                    },
+                    onDismiss = {
+                        chooserBottomSheetState.value = false
+                    })
 
         }
     }

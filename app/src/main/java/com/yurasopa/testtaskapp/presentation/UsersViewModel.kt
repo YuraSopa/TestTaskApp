@@ -24,6 +24,9 @@ class UsersViewModel @Inject constructor(
     private val _users = MutableStateFlow<List<User>>(emptyList())
     val users = _users.asStateFlow()
 
+    private var currentPage = 1
+    private var isLastPage = false
+    private var isLoading = false
 
     init {
         viewModelScope.launch {
@@ -35,9 +38,11 @@ class UsersViewModel @Inject constructor(
 
     fun getUsers() {
         viewModelScope.launch {
-            repository.getUsersList(page = 1, count = 6).collect { resource ->
+            isLoading = true
+            repository.getUsersList(page = currentPage, count = 6).collect { resource ->
                 when (resource) {
                     is Resource.Error -> {
+                        isLoading = false
 
                     }
 
@@ -46,11 +51,21 @@ class UsersViewModel @Inject constructor(
                     }
 
                     is Resource.Success -> {
-                        _users.value = resource.data ?: emptyList()
+                        isLoading = false
+                        resource.data?.let { newUsers ->
+                            if (newUsers.isEmpty()) {
+                                isLastPage = true
+                            } else {
+                                _users.value += newUsers
+                                currentPage++
+                            }
+
+                        } ?: run {
+                            isLastPage = true
+                        }
                     }
                 }
             }
-
         }
     }
 }

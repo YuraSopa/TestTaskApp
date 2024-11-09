@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,37 +37,31 @@ fun UsersScreen(
     navController: NavController,
     viewModel: UsersViewModel = hiltViewModel()
 ) {
+    val listState = rememberLazyListState()
 
-    Column(
-        modifier = modifier.fillMaxSize()
+    val users = viewModel.users.collectAsState()
+
+    LazyColumn(
+        state = listState,
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.White)
     ) {
-
-        val users = viewModel.users.collectAsState()
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .background(Color.Yellow)
-        ) {
-            Text(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .align(Alignment.Center),
-                text = "Working with GET request",
-                style = Typography.heading1
-            )
-        }
-        LazyColumn(
-            modifier = Modifier
-                .background(Color.White)
-        ) {
-            items(users.value) { user ->
-                UserBoxScreen(user)
-            }
+        items(users.value) { user ->
+            UserBoxScreen(user)
         }
     }
 
 
+    LaunchedEffect(key1 = listState) {
+        snapshotFlow {
+            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        }.collect { lastVisibleIndex ->
+            if (lastVisibleIndex == viewModel.users.value.size - 1) {
+                viewModel.getUsers()
+            }
+        }
+    }
 }
 
 @Composable
