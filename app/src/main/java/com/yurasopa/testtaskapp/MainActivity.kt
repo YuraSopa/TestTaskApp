@@ -30,9 +30,9 @@ class MainActivity : ComponentActivity() {
                         val currentRoute = navBackStackEntry?.destination?.route
                         CustomTopBar(currentRoute = currentRoute)
                     },
-                    bottomBar = { BottomBar(navController = navController) }) { innerPadding ->
+                    bottomBar = { BottomBar(navController = navController) }
+                ) { innerPadding ->
                     NavigationGraph(modifier = Modifier.padding(innerPadding), navController)
-
                 }
             }
         }
