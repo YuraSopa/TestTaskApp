@@ -34,7 +34,7 @@ class RepositoryImpl @Inject constructor(
                 }
 
             } catch (e: Exception) {
-                emit(Resource.Error(e.message.toString()))
+                emit(Resource.Error(error = e.message ?: "An unknown error occurred"))
             }
 
         }
@@ -64,9 +64,10 @@ class RepositoryImpl @Inject constructor(
                 if (response.isSuccessful) {
                     response.body()?.let {
                         emit(Resource.Success(it))
-                    } ?: emit(Resource.Error("Empty response body"))
+                    } ?: throw Exception("Empty response body")
                 } else {
-                    emit(Resource.Error(response.message()))
+                    val errorBody = response.errorBody()?.string()
+                    emit(Resource.Error(error = errorBody, statusCode = response.code()))
                 }
 
             } catch (e: Exception) {

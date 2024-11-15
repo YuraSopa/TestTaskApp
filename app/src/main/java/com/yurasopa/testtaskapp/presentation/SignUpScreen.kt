@@ -75,6 +75,11 @@ fun SignUpScreen(
 
     var showSuccessScreen by remember { mutableStateOf(false) }
 
+    val nameError by viewModel.nameError.collectAsState()
+    val emailError by viewModel.emailError.collectAsState()
+    val phoneError by viewModel.phoneError.collectAsState()
+    val photoError by viewModel.photoError.collectAsState()
+
     val cameraImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
@@ -113,20 +118,35 @@ fun SignUpScreen(
         CustomTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text(text = "Your name") })
+            label = { Text(text = "Your name") },
+            isError = nameError != null,
+            supportingText = {
+                nameError?.let { Text(text = it) }
+            }
+        )
         CustomTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text(text = "Email") })
+            isError = emailError != null,
+            label = { Text(text = "Email") },
+            supportingText = {
+                emailError?.let { Text(text = it) }
+            }
+        )
         CustomTextField(
             value = phone,
             onValueChange = { phone = it },
             label = { Text(text = "Phone") },
+            isError = phoneError != null,
             supportingText = {
-                Text(
-                    text = "+38 (XXX) XXX - XX - XX",
-                    style = Typography.body3
-                )
+                if (phoneError != null) {
+                    phoneError?.let { Text(text = it) }
+                } else {
+                    Text(
+                        text = "+38 (XXX) XXX - XX - XX",
+                        style = Typography.body3
+                    )
+                }
             }
         )
 
@@ -140,7 +160,11 @@ fun SignUpScreen(
         OutlinedTextField(
             value = photoFile?.name ?: "",
             onValueChange = {},
+            isError = photoError != null,
             placeholder = { Text("Upload your photo") },
+            supportingText = {
+                photoError?.let { Text(text = it) }
+            },
             suffix = {
                 Text(
                     text = "Upload",
@@ -152,22 +176,34 @@ fun SignUpScreen(
                         })
             },
             readOnly = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedTextColor = Color.Black,
+                focusedTextColor = Color.Black,
+                errorTextColor = Color.Black,
+                unfocusedContainerColor = Color.White,
+                focusedContainerColor = Color.White,
+                errorContainerColor = Color.White,
+                unfocusedBorderColor = Color.Gray,
+                focusedBorderColor = Color(0xFF00BDD3),
+                errorBorderColor = Color.Red,
+                unfocusedLabelColor = Color.Gray,
+                focusedLabelColor = Color(0xFF00BDD3),
+                errorLabelColor = Color.Red,
+                unfocusedSupportingTextColor = Color.Gray,
+                focusedSupportingTextColor = Color.Gray,
+                errorSupportingTextColor = Color.Red,
+                cursorColor = Color.Black,
+                errorCursorColor = Color.Red,
+                errorPlaceholderColor = Color.Red
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         )
 
         CustomizedGeneralButton(title = "Sign up") {
-            if (name.isBlank() || email.isBlank() || phone.isBlank() || photoFile == null) {
-                Toast.makeText(
-                    navController.context,
-                    "Please fill in all fields and select a photo.",
-                    Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                photoFile?.let {
-                    viewModel.addUser(name, email, phone, selectedPosition + 1, it)
-                }
+            photoFile?.let {
+                viewModel.addUser(name, email, phone, selectedPosition + 1, it)
             }
         }
 
@@ -175,9 +211,6 @@ fun SignUpScreen(
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
         }
 
-        errorMessage?.let {
-            Toast.makeText(navController.context, it, Toast.LENGTH_SHORT).show()
-        }
 
         if (chooserBottomSheetState.value) {
             ContentSelectionBottomSheet(
@@ -205,15 +238,24 @@ fun SignUpScreen(
         }
     }
 
-    registrationResult?.let {
-        if (it is Resource.Success) {
-            Toast.makeText(
-                navController.context,
-                "Registration successful!",
-                Toast.LENGTH_SHORT
-            ).show()
-            showSuccessScreen = true
+
+    registrationResult?.let { result ->
+        when (result) {
+            is Resource.Error -> {
+
+            }
+
+            is Resource.Loading -> TODO()
+            is Resource.Success -> {
+                Toast.makeText(
+                    navController.context,
+                    "Registration successful!",
+                    Toast.LENGTH_SHORT
+                ).show()
+                showSuccessScreen = true
+            }
         }
+
     }
     if (showSuccessScreen) {
         SuccessScreen(modifier = Modifier.fillMaxSize()) {
@@ -232,6 +274,7 @@ fun CustomTextField(
     label: @Composable (() -> Unit)? = null,
     supportingText: @Composable (() -> Unit)? = null,
     suffix: @Composable (() -> Unit)? = null,
+    isError: Boolean = false,
 ) {
     OutlinedTextField(
         value = value,
@@ -257,12 +300,14 @@ fun CustomTextField(
             focusedSupportingTextColor = Color.Gray,
             errorSupportingTextColor = Color.Red,
             cursorColor = Color.Black,
-            errorCursorColor = Color.Red
+            errorCursorColor = Color.Red,
+            errorPlaceholderColor = Color.Red
         ),
         shape = RoundedCornerShape(4.dp),
         singleLine = true,
         supportingText = supportingText,
-        suffix = suffix
+        suffix = suffix,
+        isError = isError
     )
 }
 

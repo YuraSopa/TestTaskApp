@@ -17,6 +17,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.json.JSONException
+import org.json.JSONObject
 import timber.log.Timber
 import java.io.File
 import java.text.SimpleDateFormat
@@ -39,18 +41,36 @@ class SignUpViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
-    private val _errorMessage = MutableStateFlow<String?>(null)
+    private val _errorMessage = MutableStateFlow<Any?>(null)
     val errorMessage = _errorMessage.asStateFlow()
+
+    private val _nameError = MutableStateFlow<String?>(null)
+    val nameError = _nameError.asStateFlow()
+
+    private val _emailError = MutableStateFlow<String?>(null)
+    val emailError = _emailError.asStateFlow()
+
+    private val _phoneError = MutableStateFlow<String?>(null)
+    val phoneError = _phoneError.asStateFlow()
+
+    private val _photoError = MutableStateFlow<String?>(null)
+    val photoError = _photoError.asStateFlow()
+
+    private val _generalError = MutableStateFlow<String?>(null)
+    val generalError = _generalError.asStateFlow()
 
     init {
         getToken()
     }
 
-    private fun getToken(){
+    private fun getToken() {
         viewModelScope.launch {
-            when(val result = repository.getToken()){
-                is Resource.Error -> { Timber.d("SignUpViewModel: Error fetching token!") }
-                is Resource.Loading -> {  }
+            when (val result = repository.getToken()) {
+                is Resource.Error -> {
+                    Timber.d("SignUpViewModel: Error fetching token!")
+                }
+
+                is Resource.Loading -> {}
                 is Resource.Success -> {
                     _token.value = result.data
                 }
@@ -68,7 +88,7 @@ class SignUpViewModel @Inject constructor(
         phone: String,
         positionId: Int,
         photoFile: File,
-        token: String? =_token.value
+        token: String? = _token.value
     ) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -76,16 +96,19 @@ class SignUpViewModel @Inject constructor(
             val userRequest = UserRequest(name, email, phone, positionId, photoFile)
             token?.let {
                 repository.addUser(userRequest, it).collect { resource ->
-                    when(resource){
+                    when (resource) {
                         is Resource.Error -> {
-                            _errorMessage.value = resource.error ?: "Unknown error occurred"
+                            _errorMessage.value = resource.error
+                            val parsedError = parseErrorBody(resource.error)
+                            handleErrorResponse(statusCode = resource.statusCode, parsedError)
                         }
-                        is Resource.Loading -> {
 
-                        }
+                        is Resource.Loading -> { }
+
                         is Resource.Success -> {
                             _registrationResult.value = resource
                             _errorMessage.value = null
+                            clearErrors()
                         }
                     }
                     _isLoading.value = false
@@ -112,4 +135,46 @@ class SignUpViewModel @Inject constructor(
             }
         )
     }
+
+    private fun clearErrors() {
+        _nameError.value = null
+        _emailError.value = null
+        _phoneError.value = null
+        _photoError.value = null
+        _generalError.value = null
+    }
+
+    private fun parseErrorBody(error: String?): Map<String, List<String>> {
+        return try {
+            val jsonObject = JSONObject(error ?: "{}")
+            val fails = jsonObject.optJSONObject("fails") ?: JSONObject()
+            fails.keys().asSequence().associateWith { key ->
+                val errorsArray = fails.optJSONArray(key)
+                List(errorsArray?.length() ?: 0) { index -> errorsArray?.getString(index) ?: "" }
+            }
+        } catch (e: JSONException) {
+            emptyMap()
+        }
+    }
+
+
+    private fun handleErrorResponse(statusCode: Int?, errorDetails: Map<String, List<String>>) {
+        when (statusCode) {
+            409 -> {
+                _generalError.value = "User with this email or phone already exists."
+            }
+
+            422 -> {
+                _nameError.value = errorDetails["name"]?.firstOrNull()
+                _emailError.value = errorDetails["email"]?.firstOrNull()
+                _phoneError.value = errorDetails["phone"]?.firstOrNull()
+                _photoError.value = errorDetails["photo"]?.firstOrNull()
+            }
+
+            else -> {
+                _nameError.value = "An unknown error occurred"
+            }
+        }
+    }
+
 }
