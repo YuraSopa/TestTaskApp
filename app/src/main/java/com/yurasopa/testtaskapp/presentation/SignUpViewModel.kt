@@ -41,9 +41,6 @@ class SignUpViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
-    private val _errorMessage = MutableStateFlow<Any?>(null)
-    val errorMessage = _errorMessage.asStateFlow()
-
     private val _nameError = MutableStateFlow<String?>(null)
     val nameError = _nameError.asStateFlow()
 
@@ -98,23 +95,22 @@ class SignUpViewModel @Inject constructor(
                 repository.addUser(userRequest, it).collect { resource ->
                     when (resource) {
                         is Resource.Error -> {
-                            _errorMessage.value = resource.error
+
                             val parsedError = parseErrorBody(resource.error)
                             handleErrorResponse(statusCode = resource.statusCode, parsedError)
                         }
 
-                        is Resource.Loading -> { }
+                        is Resource.Loading -> {}
 
                         is Resource.Success -> {
                             _registrationResult.value = resource
-                            _errorMessage.value = null
                             clearErrors()
                         }
                     }
                     _isLoading.value = false
                 }
             } ?: run {
-                _errorMessage.value = "Token is required"
+                _generalError.value = "Token is required"
                 _isLoading.value = false
             }
         }
@@ -172,9 +168,15 @@ class SignUpViewModel @Inject constructor(
             }
 
             else -> {
-                _nameError.value = "An unknown error occurred"
+                _generalError.value = "An unknown error occurred"
             }
         }
     }
 
+    fun hasErrorsFields(name: String, email: String, phone: String) {
+        _nameError.value = if (name.isNotEmpty()) null else "Required field"
+        _emailError.value = if (email.isNotEmpty()) null else "Required field"
+        _phoneError.value = if (phone.isNotEmpty()) null else "Required field"
+        _photoError.value = "Photo is required"
+    }
 }

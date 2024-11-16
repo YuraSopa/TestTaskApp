@@ -70,7 +70,6 @@ fun SignUpScreen(
     val cameraImageUri = remember { mutableStateOf<Uri?>(null) }
 
     val isLoading by viewModel.isLoading.collectAsState()
-    val errorMessage by viewModel.errorMessage.collectAsState()
     val registrationResult by viewModel.registrationResult.collectAsState()
 
     var showSuccessScreen by remember { mutableStateOf(false) }
@@ -79,6 +78,7 @@ fun SignUpScreen(
     val emailError by viewModel.emailError.collectAsState()
     val phoneError by viewModel.phoneError.collectAsState()
     val photoError by viewModel.photoError.collectAsState()
+    val generalError by viewModel.generalError.collectAsState()
 
     val cameraImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -202,8 +202,10 @@ fun SignUpScreen(
         )
 
         CustomizedGeneralButton(title = "Sign up") {
-            photoFile?.let {
-                viewModel.addUser(name, email, phone, selectedPosition + 1, it)
+            if (photoFile == null) {
+                viewModel.hasErrorsFields(name, email, phone)
+            } else {
+                viewModel.addUser(name, email, phone, selectedPosition + 1, photoFile!!)
             }
         }
 
