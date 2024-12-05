@@ -2,6 +2,7 @@ package com.yurasopa.testtaskapp.di
 
 import android.content.Context
 import com.yurasopa.testtaskapp.data.api.ApiService
+import com.yurasopa.testtaskapp.system.notifier.AppNotifier
 import com.yurasopa.testtaskapp.utils.NetworkConnection
 import dagger.Module
 import dagger.Provides
@@ -27,6 +28,10 @@ object AppModule {
             .build()
             .create()
     }
+
+    @Provides
+    @Singleton
+    fun provideAppNotifier() = AppNotifier()
 
     @Provides
     @Singleton

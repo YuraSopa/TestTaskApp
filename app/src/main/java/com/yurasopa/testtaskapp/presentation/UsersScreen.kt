@@ -26,8 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.yurasopa.testtaskapp.data.remote.User
 import com.yurasopa.testtaskapp.utils.Typography
@@ -35,20 +33,18 @@ import com.yurasopa.testtaskapp.utils.Typography
 
 @Composable
 fun UsersScreen(
-    modifier: Modifier,
-    navController: NavController,
-    viewModel: UsersViewModel = hiltViewModel()
+    viewModel: UsersViewModel
 ) {
     val listState = rememberLazyListState()
-    val hasInternet by viewModel.hasInternet.collectAsState()
+    val hasInternet = viewModel.hasInternet.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val users = viewModel.users.collectAsState()
 
-    if (hasInternet) {
+    if (hasInternet.value) {
         if (users.value.isNotEmpty()) {
             LazyColumn(
                 state = listState,
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxSize()
                     .background(Color.White)
             ) {
@@ -70,15 +66,11 @@ fun UsersScreen(
                 }
             }
         } else {
-            NoUsersScreen(modifier = modifier)
+            NoUsersScreen()
         }
 
-    } else {
-        NoInternetScreen(
-            modifier = modifier,
-            onRetry = { viewModel.retryConnection() }
-        )
     }
+
 
 
     LaunchedEffect(key1 = listState) {

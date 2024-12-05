@@ -16,9 +16,9 @@ import androidx.compose.ui.unit.dp
 import com.yurasopa.testtaskapp.R
 
 @Composable
-fun NoUsersScreen(modifier: Modifier) {
+fun NoUsersScreen() {
     Box(
-        modifier = modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
         Column(

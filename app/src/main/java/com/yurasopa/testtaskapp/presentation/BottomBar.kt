@@ -36,7 +36,7 @@ fun BottomBar(
     val currentRoute = navBackStackEntry.value?.destination?.route
 
     BottomAppBar(
-        modifier = modifier.height(80.dp)
+        modifier = modifier.height(68.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -62,7 +62,10 @@ fun BottomBar(
                     onClick = {
                         if (currentRoute != item.route) {
                             navController.navigate(item.route) {
-                                popUpToId
+//                                popUpToId
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
                                 launchSingleTop = true
                                 restoreState = true
                             }

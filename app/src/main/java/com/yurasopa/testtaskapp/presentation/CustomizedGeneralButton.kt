@@ -12,7 +12,6 @@ import com.yurasopa.testtaskapp.utils.Typography
 
 @Composable
 fun CustomizedGeneralButton(
-    modifier: Modifier = Modifier,
     title: String,
     onClick: () ->Unit
     ) {

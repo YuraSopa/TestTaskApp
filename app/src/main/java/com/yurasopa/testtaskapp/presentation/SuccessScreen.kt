@@ -18,11 +18,12 @@ import com.yurasopa.testtaskapp.R
 
 @Composable
 fun SuccessScreen(
-    modifier: Modifier,
     onClick: () -> Unit
 ) {
     Box(
-        modifier = modifier.fillMaxSize().background(Color.White),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -34,7 +35,9 @@ fun SuccessScreen(
             )
             Spacer(modifier = Modifier.padding(8.dp))
             Text(text = "User successfully registered", color = Color.Black)
-            CustomizedGeneralButton(title = "Got it", onClick = { onClick() })
+            CustomizedGeneralButton(title = "Got it", onClick = {
+                onClick()
+            })
         }
 
     }

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -41,9 +40,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.yurasopa.testtaskapp.R
+import com.yurasopa.testtaskapp.navigation.ScreenRoutes
 import com.yurasopa.testtaskapp.utils.Resource
 import com.yurasopa.testtaskapp.utils.Typography
 import com.yurasopa.testtaskapp.utils.toFile
@@ -52,9 +51,8 @@ import java.io.File
 
 @Composable
 fun SignUpScreen(
-    modifier: Modifier,
     navController: NavController,
-    viewModel: SignUpViewModel = hiltViewModel()
+    viewModel: SignUpViewModel
 ) {
     val scrollState = rememberScrollState()
 
@@ -78,7 +76,6 @@ fun SignUpScreen(
     val emailError by viewModel.emailError.collectAsState()
     val phoneError by viewModel.phoneError.collectAsState()
     val photoError by viewModel.photoError.collectAsState()
-    val generalError by viewModel.generalError.collectAsState()
 
     val cameraImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -109,7 +106,7 @@ fun SignUpScreen(
     }
 
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -260,11 +257,9 @@ fun SignUpScreen(
 
     }
     if (showSuccessScreen) {
-        SuccessScreen(modifier = Modifier.fillMaxSize()) {
-            navController.popBackStack()
-            showSuccessScreen = false
-        }
         viewModel.clearRegistrationResult()
+        navController.navigate(route = ScreenRoutes.SuccessScreen.route)
+        showSuccessScreen = false
     }
 }
 

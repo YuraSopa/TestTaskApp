@@ -1,26 +1,25 @@
 package com.yurasopa.testtaskapp.presentation
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yurasopa.testtaskapp.data.RepositoryImpl
 import com.yurasopa.testtaskapp.data.remote.User
+import com.yurasopa.testtaskapp.system.notifier.AppNotifier
+import com.yurasopa.testtaskapp.system.notifier.RetryConnectionEvent
 import com.yurasopa.testtaskapp.utils.NetworkConnection
 import com.yurasopa.testtaskapp.utils.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class UsersViewModel @Inject constructor(
     private val repository: RepositoryImpl,
-    private val networkConnection: NetworkConnection
-) : ViewModel() {
-
-    private val _hasInternet = MutableStateFlow(networkConnection.isOnline())
-    val hasInternet: StateFlow<Boolean> = _hasInternet
+    private val networkConnection: NetworkConnection,
+    private val notifier: AppNotifier
+) : BaseViewModel(networkConnection) {
 
     private val _users = MutableStateFlow<List<User>>(emptyList())
     val users = _users.asStateFlow()
@@ -30,21 +29,44 @@ class UsersViewModel @Inject constructor(
 
     private var currentPage = 1
     private var isLastPage = false
+    private var initialLoad = true
 
     init {
+        observeInternetConnection()
+        observeRetryConnection()
+    }
+
+    private fun observeRetryConnection() {
         viewModelScope.launch {
-            if (_hasInternet.value) {
-                getUsers()
+            notifier.notifier.collectLatest {
+                when (it) {
+                    is RetryConnectionEvent -> {
+                        retryConnection()
+                    }
+
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    private fun observeInternetConnection() {
+        viewModelScope.launch {
+            hasInternet.collect { isOnline ->
+
+                if (isOnline && initialLoad) {
+                    getUsers()
+                    initialLoad = false
+                }
             }
         }
     }
 
     fun retryConnection() {
-        if (networkConnection.isOnline()) {
-            _hasInternet.value = true
-            getUsers()
-        } else {
-            _hasInternet.value = false
+        viewModelScope.launch {
+            if (hasInternet.value) {
+                getUsers()
+            }
         }
     }
 

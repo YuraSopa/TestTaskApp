@@ -6,7 +6,6 @@ import android.os.Environment.DIRECTORY_PICTURES
 import androidx.compose.runtime.MutableState
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yurasopa.testtaskapp.data.RepositoryImpl
 import com.yurasopa.testtaskapp.data.remote.UserRequest
@@ -30,7 +29,7 @@ import javax.inject.Inject
 class SignUpViewModel @Inject constructor(
     private val repository: RepositoryImpl,
     private val networkConnection: NetworkConnection
-) : ViewModel() {
+) : BaseViewModel(networkConnection) {
 
     private val _token = MutableStateFlow<String?>(null)
     val token = _token.asStateFlow()
@@ -89,30 +88,32 @@ class SignUpViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             _isLoading.value = true
+            if (hasInternet.value){
+                val userRequest = UserRequest(name, email, phone, positionId, photoFile)
+                token?.let {
+                    repository.addUser(userRequest, it).collect { resource ->
+                        when (resource) {
+                            is Resource.Error -> {
 
-            val userRequest = UserRequest(name, email, phone, positionId, photoFile)
-            token?.let {
-                repository.addUser(userRequest, it).collect { resource ->
-                    when (resource) {
-                        is Resource.Error -> {
+                                val parsedError = parseErrorBody(resource.error)
+                                handleErrorResponse(statusCode = resource.statusCode, parsedError)
+                            }
 
-                            val parsedError = parseErrorBody(resource.error)
-                            handleErrorResponse(statusCode = resource.statusCode, parsedError)
+                            is Resource.Loading -> {}
+
+                            is Resource.Success -> {
+                                _registrationResult.value = resource
+                                clearErrors()
+                            }
                         }
-
-                        is Resource.Loading -> {}
-
-                        is Resource.Success -> {
-                            _registrationResult.value = resource
-                            clearErrors()
-                        }
+                        _isLoading.value = false
                     }
+                } ?: run {
+                    _generalError.value = "Token is required"
                     _isLoading.value = false
                 }
-            } ?: run {
-                _generalError.value = "Token is required"
-                _isLoading.value = false
             }
+
         }
     }
 
